@@ -1,0 +1,14 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "consistent-code-review",
+  "version": "0.1.0",
+  "description": "Code review that gives the same findings on unchanged code: path:line evidence for every finding, a fixed checklist and order, and re-runs reconciled against a hashed baseline report.",
+  "author": {
+    "name": "arm-pz",
+    "url": "https://github.com/arm-pz"
+  },
+  "homepage": "https://skillsmith.tech/consistent-code-review/",
+  "repository": "https://github.com/arm-pz/consistent-code-review",
+  "keywords": ["code-review", "deterministic", "bug-finding", "agent-skills"],
+  "skills": "./skills/"
+}
