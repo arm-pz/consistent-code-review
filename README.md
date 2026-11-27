@@ -20,6 +20,7 @@ Ask it things like:
 | Fixed checklist | Correctness, null handling, errors, resources, concurrency, security, data integrity, maintainability, style, in that order |
 | Findings | CRITICAL / HIGH / MEDIUM / LOW / INCONCLUSIVE, each with `path:line`, the snippet, the reason and one fix direction |
 | Baseline | A pasted earlier report or `.reviews/<Input ID>.md`. Earlier findings keep their IDs and anything new goes under "New since baseline", never hidden |
+| Two handovers | A markdown report for people and, for a pull request, `review-report.json` for `address-findings` and the pr-graph merge gate, with the same findings and IDs in both |
 
 ## Not for
 
