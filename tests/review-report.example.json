@@ -1,0 +1,36 @@
+{
+  "pr": 12,
+  "head_sha": "0123456789abcdef0123456789abcdef01234567",
+  "base_ref": "main",
+  "base_sha": "89abcdef0123456789abcdef0123456789abcdef",
+  "round": 1,
+  "verdict": "fail",
+  "findings": [
+    {
+      "id": "H1",
+      "severity": "HIGH",
+      "file": "src/orders.py",
+      "line": 42,
+      "finding": "Refund total ignores partial refunds: the sum skips rows with status 'partial', so a second refund can exceed the charge.",
+      "suggested_fix": "Include 'partial' rows in the refunded total before comparing with the charge."
+    },
+    {
+      "id": "L1",
+      "severity": "LOW",
+      "file": "src/orders.py",
+      "line": null,
+      "finding": "Two helpers named total(): the module-level one shadows the import.",
+      "suggested_fix": "Rename the local helper to refunded_total()."
+    }
+  ],
+  "inconclusive": [
+    {
+      "id": "I1",
+      "file": "src/payments.py",
+      "line": 88,
+      "finding": "Webhook retry may double-apply a refund.",
+      "reason": "Needs the payment provider's retry behaviour, which is not in the repo.",
+      "would_be": "HIGH"
+    }
+  ]
+}

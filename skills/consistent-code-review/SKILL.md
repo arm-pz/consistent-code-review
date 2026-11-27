@@ -1,7 +1,7 @@
 ---
 name: consistent-code-review
-description: Perform a deterministic, evidence-backed code review that produces the same findings on re-runs of unchanged code, reconciled against a previous report when one is supplied. Use whenever the user asks to review code, a diff, a PR or a file, says "check for bugs" or "find bugs", complains that earlier reviews invented different bugs on the same code, or wants a review they can compare across runs, even if they never say "consistent" or "deterministic". Not for architectural redesign, live security red-teaming (use pre-ship-security-red-team), live performance scoring (use pre-ship-performance-audit), or writing code and applying fixes (use production-code).
-version: 1.0.0
+description: Perform a deterministic, evidence-backed code review that produces the same findings on re-runs of unchanged code, reconciled against a previous report when one is supplied, as a markdown report and, for a pull request, a review-report.json that address-findings and the pr-graph merge gate read. Use whenever the user asks to review code, a diff, a PR or a file, says "check for bugs" or "find bugs", complains that earlier reviews invented different bugs on the same code, or wants a review they can compare across runs, even if they never say "consistent" or "deterministic". Not for architectural redesign, live security red-teaming (use pre-ship-security-red-team), live performance scoring (use pre-ship-performance-audit), or writing code and applying fixes (use production-code).
+version: 1.1.0
 ---
 
 # Consistent Code Review
@@ -116,12 +116,27 @@ Within each severity, order findings by path, then line number, then title. Neve
 #### INCONCLUSIVE
 - **I1 · path:line** — Short title
   Why inconclusive: <missing context / cannot execute / ambiguous>
+  Would be: <CRITICAL | HIGH | MEDIUM | LOW, if it turned out real>
 
 #### New since baseline
 (only on re-runs; same format, IDs continue the severity's numbering)
 ```
 
 End with one line offering to save the report as `.reviews/<Input ID>.md` so the next run has a baseline. Write it only if the user says yes.
+
+### Phase 6 – Second handover: review-report.json (pull requests only)
+The markdown report is for people. When the scope is a pull request, also produce the same findings as `review-report.json`, the shape `address-findings` and the pr-graph merge gate read. Both formats come from the same Phase 3 findings: never add, drop or re-grade a finding in one and not the other.
+
+- **When:** the scope is a PR and a caller asks for it (a workflow step, the pr-graph reviewer, `address-findings`, or the user). Pasted code or a bare diff has no PR number or SHAs, so it gets the markdown report only; say so in one line.
+- **Pin the review to one head.** Read `gh api repos/{owner}/{repo}/pulls/<n>` once and record `.head.sha`, `.base.ref` and `.base.sha`. Review `git diff <base_sha>...<head_sha>` at exactly those commits. If the head or base moves while you work, start again.
+- **Fields** (schema: `tools/pr-graph/schemas/review-report.schema.json` in arm-pz/skills-site, `additionalProperties: false` at every level, so add nothing else):
+  - `pr` (integer), `head_sha` and `base_sha` (full 40 characters), `base_ref`, `round` (1 to 4; 1 unless the caller says).
+  - `verdict`: `pass` only when no finding is CRITICAL or HIGH, otherwise `fail`.
+  - `findings`: one entry per C, H, M and L finding: `id` (the same ID as the markdown, such as H1), `severity`, `file`, `line` (an integer, or `null` when the finding has no single line), `finding` (the short title and its Why, one line), `suggested_fix` (the Fix direction).
+  - `inconclusive`: one entry per INCONCLUSIVE finding: `id` (I1…), `file`, `line`, `finding`, `reason` (the missing evidence), `would_be` (its severity if real). Never in `findings`, never blocking.
+  - On a re-review, given the previous round's `review-report.json`: `confirmed_fixed` lists earlier IDs you checked and found fixed, and `prior_id` on a finding names the earlier ID it continues. Judge the new diff on its own; a fixer saying something is fixed is not evidence.
+- **Where:** the path the caller gives. Otherwise `.reviews/pr-<n>/round-<r>/review-report.json`, with the markdown beside it as `review.md`, so `address-findings` writes `fix-report.json` in the same folder. A caller's request is the yes to write both files; without one, show the JSON in a fenced block and offer to save it, as with the markdown.
+- **Check it before handing it over.** Validate against the schema when you can reach it (`python -c "import json, jsonschema; ..."` with the schema file). If you cannot, check the required keys, the ID patterns and the 40-character SHAs by hand, and say the file was checked by hand, not validated.
 
 ## Handoffs
 - **In, from production-code.** production-code sends every review here with a `HANDOFF — production-code -> consistent-code-review` block. Take its scope line as the Phase 1 scope, and an earlier report in its Evidence line as the baseline. Ask only if the scope is still ambiguous.
@@ -138,6 +153,7 @@ Next: production-code fix
 ```
 
 If production-code is not installed, stop at the report. The handoff block is still useful to paste elsewhere.
+- **Out, to address-findings (pull requests).** `review-report.json` from Phase 6 is the handover: address-findings fixes its CRITICAL and HIGH findings inside the PR's own files. Offer it in one line when the verdict is `fail` and address-findings is installed; send nothing unless the user or the calling workflow asks.
 
 ## Hard rules
 - Never invent a bug that cannot be pointed to with path + line + snippet.
@@ -146,6 +162,7 @@ If production-code is not installed, stop at the report. The handoff block is st
 - Prefer “INCONCLUSIVE” over speculation.
 - Keep the entire review under 800 lines of output. If it would exceed that, report every CRITICAL and HIGH in full and give counts only for the rest, and say so.
 - Do not implement fixes inside this skill — only report.
+- The markdown report and `review-report.json` list the same findings with the same IDs and severities.
 
 ## Known limits
 - Cannot guarantee bit-for-bit identical output if the model temperature is > 0 or the context window truncates differently. The baseline reconciliation in Phase 4 is what makes re-runs line up; without a baseline, two first runs can still differ.
