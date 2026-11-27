@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "consistent-code-review",
   "version": "0.2.0",
-  "description": "Code review that gives the same findings on unchanged code: path:line evidence for every finding, a fixed checklist and order, and re-runs reconciled against a hashed baseline, and for a pull request a review-report.json that address-findings reads.",
+  "description": "Code review that gives the same findings on unchanged code: path:line evidence for every finding, a fixed checklist and order, re-runs reconciled against a hashed baseline, and for a pull request a review-report.json that address-findings reads.",
   "author": {
     "name": "arm-pz",
     "url": "https://github.com/arm-pz"
